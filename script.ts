@@ -1,9 +1,11 @@
+/* PIXI動作チェック */
 let type = 'WebGL'
 if (!PIXI.utils.isWebGLSupported()) {
     type = 'canvas';
 }
 PIXI.utils.sayHello(type);
 
+/* PIXIアプリケーション作成 */
 const app = new PIXI.Application({
     width: 512,
     height: 512,
@@ -14,9 +16,9 @@ const app = new PIXI.Application({
 });
 app.renderer.backgroundColor = 0x061639;
 app.renderer.autoResize = true;
-
 document.body.appendChild(app.view);
 
+/* ベクトル */
 class Vector2 {
     x: number;
     y: number;
@@ -26,6 +28,7 @@ class Vector2 {
     }
 }
 
+/* パーティクル設定値IF */
 interface ParticleOption {
     x?: number;
     y?: number;
@@ -38,6 +41,7 @@ interface ParticleOption {
     shape?: number;
     points?: number;
 }
+/* パーティクル描画クラス */
 class Shape extends PIXI.Graphics {
     radius: number;
     fill: number;
@@ -65,7 +69,7 @@ class Shape extends PIXI.Graphics {
         return Math.abs(this.scale.x) * this._width;
     }
 
-    set width(value) // eslint-disable-line require-jsdoc
+    set width(value)
     {
         const s = this.scale.x > 0 ? 1 : -1;
 
@@ -79,8 +83,8 @@ class Shape extends PIXI.Graphics {
         this.x = option.x || 0;
         this.y = option.y || 0;
         this.radius = option.radius || 5;
-        this.width = option.width || 5;
-        this.height = option.height || 5;
+        this.width = option.width || 10;
+        this.height = option.height || 10;
         this.fill = option.fill || 0xffffff;
         this.alpha = option.alpha || 1;
         this.maxLife = this.life = Math.floor(option.life || app.ticker.FPS);
@@ -95,7 +99,6 @@ class Shape extends PIXI.Graphics {
 
     }
 }
-
 class Circle extends Shape {
     constructor(option?: ParticleOption ) {
         super(option);
@@ -145,7 +148,7 @@ class Rect extends Shape {
 class Star extends Shape {
     public points: number;
     
-    private _innerRadius: number = 5;
+    private _innerRadius: number;
     get innerRadius(): number
     {
         return this._innerRadius;
@@ -160,7 +163,7 @@ class Star extends Shape {
 
         this.shape = PIXI.SHAPES.CIRC;
         this.points = option.points || 5;
-        this.innerRadius = this.radius * 0.3;
+        this.innerRadius = this.radius * 0.5;
     }
     public render(delta?: number): void {
         super.render(delta);
@@ -203,40 +206,51 @@ function release(evt: PointerEvent) {
     touchEvent.y = y;
     touchEvent.touched = false;
 }
-
 app.view.onpointerdown = point;
 app.view.onpointermove = touched;
 app.view.onpointerup = release;
 
+/* パーティクル格納コンテナ */
 const particles = new PIXI.Container();
 app.stage.addChild(particles);
 app.stage.position.set(0, 0);
 
+/* パーティクル数表示テキスト */
 const text = new PIXI.Text('');
 text.x = app.view.width / 2;
 text.y = app.view.height / 2;
 text.style.fill = 0xffffff;
 app.stage.addChild(text);
 
-/*
-const shapeButton = new PIXI.Text('off');
-shapeButton.on('mousemove', function (obj) {
-    console.log('test');
-    shapeButton.text = 'on';
+/* パーティクルタイプ */
+var ParticleType: any = Circle;
+
+/* パーティクル変更用テキスト */
+const shapeButton = new PIXI.Text('Shape:Circle');
+shapeButton.interactive = true;
+shapeButton.on('pointerdown', function (obj) {
+    if (ParticleType === Circle) {
+        ParticleType = Rect;
+        shapeButton.text = 'Shape:Rectangle';
+    } else if (ParticleType === Star) {
+        ParticleType = Circle;
+        shapeButton.text = 'Shape:Circle';
+    } else if (ParticleType === Rect) {
+        ParticleType = Star;
+        shapeButton.text = 'Shape:Star';
+    } else {
+        shapeButton.text = 'Shape:NONE';
+    }
 });
-shapeButton.position.set(100, 100);
+shapeButton.position.set(0, 0);
 shapeButton.style.fill = 0xffffff;
 app.stage.addChild(shapeButton);
-*/
-
-let ParticleType = Star;
-
 
 /* Main */
 app.ticker.add(tick);
 function tick(delta: number): void {
     if (touchEvent.touched) {
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 2; i++) {
             const particle = new ParticleType({
                 x: touchEvent.x,
                 y: touchEvent.y,
